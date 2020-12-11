@@ -1,30 +1,23 @@
 - hosts: all,!local
   gather_facts: no
-  vars:
-    vault_id: dev
-    vault_file: vault.yml
-    vault_filepath: "{{ playbook_dir + '/' + vault_file }}"
-    vault_passwd: .vault_passwd
-    plain_passwd: .plain_passwd
-    plain_passwd_path: "{{ playbook_dir }}"
-    default_user: husker
-    password_var_name: "{{ default_user + '_' + inventory_hostname }}"
+  vars_files:
+    - vars/default.yml
+
   tasks:
     - name: Ensure "vault_file" exists.
       copy:
         content: "---"
-        dest: "{{ playbook_dir }}/{{ vault_file }}"
+        dest: "{{ vault_filepath }}"
         force: no
       delegate_to: localhost
 
     - name: Find out if we have already set a password.
       command: "grep -c \"{{ password_var_name }}\" {{ vault_file }}"
       args:
-        chdir: "{{ playbook_dir }}"
+        chdir: "{{ vault_path }}"
       register: password_in_file
       delegate_to: localhost
       ignore_errors: true
-    - debug: msg="{{ password_in_file.stdout }}"
 
     - name: Create a password and use ansible-vault to write it.
       when: password_in_file.stdout == "0"
@@ -33,17 +26,30 @@
         - name: Create a password.
           command: "openssl rand -base64 32"
           register: new_vault_password
-          no_log: true
-        - name: Encrypt the new password.
-          command: "ansible-vault encrypt_string --vault-id {{ vault_id }}@{{ vault_passwd }} --name \"{{ password_var_name }}\" \"{{ new_vault_password.stdout }}\""
+          #no_log: true
+
+        - set_fact:
+            cmd_encrypt_passwd: "ansible-vault encrypt_string --vault-id {{ vault_id }}@{{ vault_passwd_filepath }} --name \"{{ password_var_name }}\" \"{{ new_vault_password.stdout }}\""
+          when: use_vault_passwd_file == "yes"
+
+        - set_fact:
+            cmd_encrypt_passwd: "ansible-vault encrypt_string --name \"{{ password_var_name }}\" \"{{ new_vault_password.stdout }}\""
+          when: use_vault_passwd_file == "no"
+
+        - name: Encrypt the new password
+          command: "{{ cmd_encrypt_passwd }}"
           register: new_vault_password_encrypted
-          no_log: true
+          #no_log: true
+
         - name: Write the plain password to our local hidden file.
           lineinfile:
-            path: "{{ plain_passwd_path + '/' + plain_passwd }}"
+            path: "{{ plain_passwd_filepath }}"
             line: "{{ password_var_name + ' ' + new_vault_password.stdout }}"
-            create: yes
             insertafter: "EOF"
+            create: yes
+            mode: '0644'
+          when: save_plain_password == "yes"
+
         - name: Write the encrypted password to our local ansible-vault file.
           lineinfile:
             path: "{{ vault_filepath }}"

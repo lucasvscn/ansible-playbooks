@@ -1,0 +1,17 @@
+---
+use_vault_passwd_file: "yes"
+save_plain_password: "yes"
+
+vault_path: "../.vault/"
+vault_passwd_file: vault_passwd
+vault_passwd_filepath: "{{ vault_path + '/' + vault_passwd_file }}"
+
+vault_id: dev
+vault_file: vault.yml
+vault_filepath: "{{ vault_path + '/' + vault_file }}"
+
+plain_passwd_file: plain_passwd
+plain_passwd_filepath: "{{ vault_path + '/' + plain_passwd_file }}"
+
+default_user: husker
+password_var_name: "{{ default_user + '_' + inventory_hostname }}"

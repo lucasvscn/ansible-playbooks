@@ -1,5 +1,3 @@
 /sandbox
-.plain_passwd
-.vault_passwd
-vault.yml
+/.vault
 hosts

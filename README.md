@@ -20,7 +20,7 @@
 First you need to create a password file for your vault with following command.
 
 ```bash
-$ echo 'dev my_secret_password' > ./server_passwords/.vault_passwd
+$ mkdir .vault && echo 'dev my_secret_password' > .vault/vault_passwd
 ```
 
 Run the `servers_passwords/playbook.yml` to generate passwords for all your hosts.
@@ -29,4 +29,4 @@ Run the `servers_passwords/playbook.yml` to generate passwords for all your host
 $ ansible-playbook -i hosts server_passwords/playbook.yml
 ```
 
-Generated passwords will be stored by default in `server_passwords/vault.yml` file.
+Generated passwords will be stored by default in `.vault/vault.yml` file.
